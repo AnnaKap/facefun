@@ -24,15 +24,10 @@ navigator.mediaDevices.getUserMedia({ video: true, audio: false })
     });
 
 let options = { 
-  imageScaleFactor: 0.3,
-  outputStride: 32,
+
   flipHorizontal: true,
-  minConfidence: 0.5,
-  maxPoseDetections: 5,
-  scoreThreshold: 0.5,
-  nmsRadius: 20,
-  detectionType: 'single',
-  multiplier: 0.75,
+  minConfidence: 0.5
+ 
  } 
 let poseNet = ml5.poseNet(video, options, modelReady)
 
@@ -54,7 +49,7 @@ const renderer = new THREE.WebGLRenderer({antialias:true});
 // renderer.setClearColor("#2E2B40");
 
 // Configure renderer size
-renderer.setSize( window.innerWidth, window.innerHeight );
+renderer.setSize( window.innerWidth / 2, window.innerHeight / 2 );
 
 // Append Renderer to DOM
 document.body.appendChild( renderer.domElement );
@@ -71,42 +66,79 @@ let cube02 = new THREE.Mesh( geometry, material );
 let cube03 = new THREE.Mesh( geometry, material );
 scene.add( cube01, cube02, cube03 );
 
-
-cube02.position.x = 0
-cube02.position.y = 0
-cube02.position.z = 2
-cube03.position.x = -13
-cube03.position.y = 0
-cube03.position.z = 2
 // Render Loop
-let lastPosition;
-const render = function (anose) {
-  console.log(anose)
-  if (anose >200 && anose < 225){
-    cube01.position.x = 0
-  
-    } else if (lastPosition < anose){
-    cube01.position.x -=1
-    } else {
-    cube01.position.x += 1
+
+let lastXPosition = 100;
+let lastYPosition = 100;
+let changeX;
+let changeY;
+
+const changeYXPosition = (faceObj, shape, leftEyeShape, rightEyeShape) => {
+  if (!changeX){
+    changeX = 0
+    changeY = 0
   }
-  lastPosition = anose
+  changeX = faceObj.x - lastXPosition
+  changeY = faceObj.y - lastYPosition
+  
+  console.log('changes x,y', changeX, changeY)
+  shape.position.x += (changeX * 0.5)
+  shape.position.y += -(changeY * 0.3)
+  rightEyeShape.position.x = shape.position.x + 1
+  rightEyeShape.position.y = shape.position.y + 2
+  leftEyeShape.position.x = shape.position.x - 1
+  leftEyeShape.position.y = shape.position.y + 2
+
+  console.log(`shape position x, y`, shape.position.x, shape.position.y)
+  lastXPosition = faceObj.x
+  lastYPosition = faceObj.y
+  console.log('lastpositions', lastXPosition, lastYPosition)
+}
+
+const render = function (aNose, shape, aRightEye, aLeftEye) {
+    // let changeX;
+    // let changeY;
+    changeYXPosition(aNose, shape, aRightEye, aLeftEye)
+    // changeYXPosition(aRightEye, cube02, 0 , 0)
+    // changeYXPosition(aLeftEye, cube03, 0 , 0)
+  // console.log('last pos', lastPosition)
+  // if (!change){
+  //   change = 1
+  // }
+  // change = aNose.x - lastPosition
+  // console.log("change", change)
+  // cube01.position.x = cube01.position.x + (change * 1.1)
+  // cube01.position.y = 1;
+  // console.log("position",cube01.position.x)
+  // lastPosition = aNose.x
   
   renderer.render(scene, camera);
 };
+
 let nose = {}
+let rightEye = {}
+let leftEye = {}
+
 poseNet.on('pose', function(results) {
   let poses = results;
-  loopThroughPoses(poses, nose)
-//   console.log(nose)
-  let estimatedNose = Math.round(nose.x)
-  
-  render(estimatedNose)
+  loopThroughPoses(poses, nose, rightEye, leftEye)
+  let estimatedNose = {
+    x: Math.round(nose.x),
+    y: Math.round(nose.y)
+  }
+  // let estimatedREye = {
+  //   x: Math.round(rightEye.x),
+  //   y: Math.round(rightEye.y)
+  // }
+  // let estimatedLEye = {
+  //   x: Math.round(leftEye.x),
+  //   y: Math.round(leftEye.y)
+  // }
+  render(estimatedNose, cube01, cube02, cube03)
 });
 
 function modelReady() {
-  let status = document.getElementById('status')
-  status.innerHTML = 'Model loaded'
+  
   console.log("model Loaded")
 
 }
