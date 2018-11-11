@@ -1,8 +1,5 @@
 import * as ml5 from 'ml5'
 import * as THREE from 'three'
-import * as slice from 'threejs-slice-geometry'
-
-
 import loopThroughPoses from './threeJs/nose'
 
 let video = document.createElement('video')
