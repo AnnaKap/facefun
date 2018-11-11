@@ -1,13 +1,16 @@
 import * as ml5 from 'ml5'
 import * as THREE from 'three'
 
+
 import loopThroughPoses from './threeJs/nose'
 
 let video = document.createElement('video')
+let vidDiv = document.getElementById('video')
+let leftEyeButton = document.getElementById('leftEye')
 video.setAttribute('width', 255);
 video.setAttribute('height', 255);
 video.autoplay = true
-document.body.appendChild(video)
+vidDiv.appendChild(video)
 
 // get the users webcam stream to render in the video
 navigator.mediaDevices.getUserMedia({ video: true, audio: false })
@@ -32,7 +35,9 @@ scene.background = new THREE.Color( 0xf0f0f0 );
 // Create a basic perspective camera
 const camera = new THREE.PerspectiveCamera( 75, (window.innerWidth/2) /(window.innerHeight/2), 0.1, 1000 );
 camera.position.z = 20;
-
+let i = 0;
+camera.position.set(  0, 7, 15 );
+camera.lookAt( scene.position );
 
 // Create a renderer with Antialiasing
 const renderer = new THREE.WebGLRenderer({antialias:true});
@@ -46,17 +51,23 @@ renderer.setSize(window.innerWidth/2, window.innerHeight/2);
 // Append Renderer to DOM
 document.body.appendChild( renderer.domElement );
 
-//raycaster assists in mouse picking
 
+//raycaster assists in mouse picking
+let newSphereGeo = false
 let geometry = new THREE.BoxGeometry( 1, 1, 1 );
 let sphereGeo = new THREE.SphereGeometry(1, 50, 50, 0, Math.PI * 2, 0, Math.PI * 2);
-let material = new THREE.MeshPhongMaterial( { color: "#433F81" } );
+let material = new THREE.MeshPhongMaterial( { color: "0x2194ce" } );
+
 let cube01 = new THREE.Mesh( geometry, material );
 let cube02 = new THREE.Mesh( sphereGeo, material );
 let cube03 = new THREE.Mesh( sphereGeo, material );
-let ambientLight = new THREE.AmbientLight( 0xcccccc, 0.4 );
+
+
+let  light = new THREE.PointLight( 0xFFFF00 );
+light.position.set( -10, 0, 10 );
+
 			
-scene.add(ambientLight, cube01, cube02, cube03 );
+scene.add(light, cube01, cube02, cube03);
 
 // Render Loop
 
@@ -66,14 +77,14 @@ let changeX = 1;
 let changeY = 1;
 
 const changeYXPosition = (faceObj, shape, leftEyeShape, rightEyeShape) => {
-  console.log("Change", faceObj.x, lastXPosition)
+ 
 
   changeX = faceObj.x - lastXPosition
   changeY = faceObj.y - lastYPosition
   
   console.log('changes x,y', changeX, changeY)
-  shape.position.x += (changeX * 0.12)
-  shape.position.y += -(changeY * 0.12)
+  shape.position.x += (changeX * 0.20)
+  shape.position.y += -(changeY * 0.20)
   rightEyeShape.position.x = shape.position.x + 3
   rightEyeShape.position.y = shape.position.y + 4
   leftEyeShape.position.x = shape.position.x - 3
@@ -85,11 +96,21 @@ const changeYXPosition = (faceObj, shape, leftEyeShape, rightEyeShape) => {
   console.log('lastpositions', lastXPosition, lastYPosition)
 }
 // import changeYXPosition from './threeJs/changeXY'
+
 const render = function (aNose, shape, aRightEye, aLeftEye) {
+  if (newSphereGeo) {
+    aRightEye.geometry = geometry
+  } else {
+    aRightEye.geometry = sphereGeo
+  }
+  console.log(newSphereGeo)
   changeYXPosition(aNose, shape, aRightEye, aLeftEye)
-  aRightEye.rotation.x +=0.1
-  aLeftEye.rotation.x -=0.1
+  aRightEye.rotation.x += 0.1
+  aLeftEye.rotation.x -= 0.1
+  
+ 
   renderer.render(scene, camera);
+
 };
 
 let nose = {}
@@ -100,8 +121,8 @@ poseNet.on('pose',  function(results) {
   let poses = results;
  loopThroughPoses(poses, nose, rightEye, leftEye)
   let estimatedNose = {
-    x: Math.round(nose.x),
-    y: Math.round(nose.y)
+    x: nose.x,
+    y: nose.y
   }
   if (estimatedNose.x && estimatedNose.y){
   console.log("On POSE", estimatedNose.x)
@@ -115,7 +136,13 @@ function modelReady() {
 
 }
 // render()
-
+leftEyeButton.addEventListener('click', function(){
+  if (newSphereGeo) {
+    newSphereGeo = false
+  } else {
+    newSphereGeo = true
+  }
+});
 window.addEventListener( 'resize', onWindowResize, false );
 			
 function onWindowResize() {
@@ -126,3 +153,4 @@ function onWindowResize() {
   //  video.setAttribute('width', window.innerWidth/2);
   //  video.setAttribute('height', window.innerWidth/2);
 }
+

@@ -12,13 +12,7 @@ for (let i = 0; i < poses.length; i++) {
          if (keypoint.part === 'nose'){
             nose.x = keypoint.position.x
             nose.y = keypoint.position.y
-         } else if (keypoint.part === 'leftEye'){
-            leftEye.x = keypoint.position.x
-            leftEye.y = keypoint.position.y
-         } else if (keypoint.part === 'rightEye'){
-          rightEye.x = keypoint.position.x
-          rightEye.y = keypoint.position.y
-        }
+         } 
       }
     }
   }
