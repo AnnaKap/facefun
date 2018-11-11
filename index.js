@@ -1,5 +1,6 @@
 import * as ml5 from 'ml5'
 import * as THREE from 'three'
+import * as slice from 'threejs-slice-geometry'
 
 
 import loopThroughPoses from './threeJs/nose'
@@ -7,6 +8,9 @@ import loopThroughPoses from './threeJs/nose'
 let video = document.createElement('video')
 let vidDiv = document.getElementById('video')
 let leftEyeButton = document.getElementById('leftEye')
+let rightEyeButton = document.getElementById('rightEye')
+let noseButton = document.getElementById('nose')
+let mouthButton = document.getElementById('mouth')
 video.setAttribute('width', 255);
 video.setAttribute('height', 255);
 video.autoplay = true
@@ -43,7 +47,7 @@ camera.lookAt( scene.position );
 const renderer = new THREE.WebGLRenderer({antialias:true});
 
 // Configure renderer clear color
-// renderer.setClearColor("#2E2B40");
+renderer.setClearColor("#2E2B40");
 
 // Configure renderer size
 renderer.setSize(window.innerWidth/2, window.innerHeight/2);
@@ -52,22 +56,43 @@ renderer.setSize(window.innerWidth/2, window.innerHeight/2);
 document.body.appendChild( renderer.domElement );
 
 
-//raycaster assists in mouse picking
 let newSphereGeo = false
+let rightEyeBool = false
+let noseBool = false
+let mouthBool = false
+
 let geometry = new THREE.BoxGeometry( 1, 1, 1 );
 let sphereGeo = new THREE.SphereGeometry(1, 50, 50, 0, Math.PI * 2, 0, Math.PI * 2);
+let mouthGeo =  new THREE.TorusGeometry( 1, 0.5, 6, 100 );
+let halfMouth = new THREE.BoxGeometry( 5, 1, 1 );
 let material = new THREE.MeshPhongMaterial( { color: "0x2194ce" } );
 
 let cube01 = new THREE.Mesh( geometry, material );
 let cube02 = new THREE.Mesh( sphereGeo, material );
 let cube03 = new THREE.Mesh( sphereGeo, material );
+let oMouth = new THREE.Mesh( mouthGeo, material );
+// let halfMouthObj = new THREE.Mesh( halfMouth, material );
 
 
 let  light = new THREE.PointLight( 0xFFFF00 );
 light.position.set( -10, 0, 10 );
 
+function createHemisphereLight() { 
+  return new THREE.HemisphereLight(0x303F9F, 0x000000, 1); 
+}
+var loader = new THREE.TextureLoader();
+var groundTexture = loader.load( 'https://img.freepik.com/free-photo/white-marble-texture-with-natural-pattern-for-background-or-design-art-work_24076-186.jpg?size=338&ext=jpg' );
+				groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+				groundTexture.repeat.set( 25, 25 );
+				groundTexture.anisotropy = 16;
+				var groundMaterial = new THREE.MeshLambertMaterial( { map: groundTexture } );
+				var mesh = new THREE.Mesh( new THREE.PlaneBufferGeometry( 20000, 20000 ), groundMaterial );
+				mesh.position.y = - 250;
+				mesh.rotation.x = - Math.PI / 2;
+				mesh.receiveShadow = true;
+				scene.add( mesh );
 			
-scene.add(light, cube01, cube02, cube03);
+scene.add(light, cube01, cube02, cube03, oMouth, createHemisphereLight());
 
 // Render Loop
 
@@ -89,6 +114,8 @@ const changeYXPosition = (faceObj, shape, leftEyeShape, rightEyeShape) => {
   rightEyeShape.position.y = shape.position.y + 4
   leftEyeShape.position.x = shape.position.x - 3
   leftEyeShape.position.y = shape.position.y + 4
+  oMouth.position.x = shape.position.x
+  oMouth.position.y = shape.position.y - 4
 
   console.log(`shape position x, y`, shape.position.x, shape.position.y)
   lastXPosition = faceObj.x
@@ -98,11 +125,15 @@ const changeYXPosition = (faceObj, shape, leftEyeShape, rightEyeShape) => {
 // import changeYXPosition from './threeJs/changeXY'
 
 const render = function (aNose, shape, aRightEye, aLeftEye) {
-  if (newSphereGeo) {
-    aRightEye.geometry = geometry
-  } else {
-    aRightEye.geometry = sphereGeo
-  }
+  newSphereGeo ? aRightEye.geometry = geometry : aRightEye.geometry = sphereGeo
+  rightEyeBool ? aLeftEye.geometry = geometry : aLeftEye.geometry = sphereGeo
+  noseBool ? cube01.geometry = geometry : cube01.geometry = sphereGeo
+  mouthBool ? oMouth.geometry =  mouthGeo : oMouth.geometry = halfMouth
+  // if (newSphereGeo) {
+  //   aRightEye.geometry = geometry
+  // } else {
+  //   aRightEye.geometry = sphereGeo
+  // }
   console.log(newSphereGeo)
   changeYXPosition(aNose, shape, aRightEye, aLeftEye)
   aRightEye.rotation.x += 0.1
@@ -141,6 +172,29 @@ leftEyeButton.addEventListener('click', function(){
     newSphereGeo = false
   } else {
     newSphereGeo = true
+  }
+});
+
+rightEyeButton.addEventListener('click', function(){
+  if (rightEyeBool) {
+    rightEyeBool = false
+  } else {
+    rightEyeBool = true
+  }
+});
+
+noseButton.addEventListener('click', function(){
+  if (noseBool) {
+    noseBool = false
+  } else {
+    noseBool = true
+  }
+});
+mouthButton.addEventListener('click', function(){
+  if (mouthBool) {
+    mouthBool = false
+  } else {
+    mouthBool = true
   }
 });
 window.addEventListener( 'resize', onWindowResize, false );
